@@ -1,11 +1,23 @@
+import datetime
 import re
 
 import discord
 
-dictionary = ""
-phrases = ""
-undefined_words = ""
-history = ""
+dictionary = None
+dictionary_channel: discord.TextChannel
+dictionary_id = None
+
+phrases = None
+phrases_channel: discord.TextChannel
+phrases_id = None
+
+undefined_words = None
+undefined_words_channel: discord.TextChannel
+undefined_words_id = None
+
+history = None
+history_channel: discord.TextChannel
+history_id = None
 
 
 class myClient(discord.Client):
@@ -43,10 +55,18 @@ async def reformat_dictionary_input(msg: discord.Message):
         split_definitions = re.split('[1-9]*(?=.)$', definitions)
         num_of_definitions = len(split_definitions)
         reformatted_msg = term
+
         for i, defs in range(num_of_definitions), split_definitions:
             reformatted_msg = f"__{reformatted_msg}__: ```{i + 1}. {defs}```"
+        sent_message = await msg.channel.send(reformatted_msg)
 
-
+        await history_channel.send(f"Formatted on: ``{datetime.date.today().strftime('%d-%m-%Y %H:%M:%S')}``\n "
+                                   f"New Message Link: {sent_message.jump_url}\n"
+                                   f"Original Content:\n{msg}")
+        # await history_channel.send(f"Created on: ``{datetime.date.today().strftime('%d-%m-%Y %H:%M:%S')}``\n "
+        #                            f"Link: {sent_message.jump_url}\n"
+        #                            f"Content:\n{sent_message}")
+        msg.delete()
 
 async def set_channel(msg: discord.Message):
     valid_command = \
@@ -59,21 +79,39 @@ async def set_channel(msg: discord.Message):
         given_command = msg.content.split('/')[0]+"/"
         channel = msg.content.removeprefix(given_command).strip()
         if channel in discord.Guild.text_channels:
-            if channel == set_dictionary_channel:
+            if given_command == set_dictionary_channel:
                 global dictionary
                 dictionary = channel
+                global dictionary_channel
+                dictionary_channel = discord.utils.get(msg.guild.channels, name=dictionary)
+                global dictionary_id
+                dictionary_id = dictionary_channel.id
                 typeOf_channel = "dictionary"
-            if channel == set_phrase_channel:
+
+            if given_command == set_phrase_channel:
                 global phrases
                 phrases = channel
+                global phrases_channel
+                phrases_channel = discord.utils.get(msg.guild.channels, name=phrases)
+                global phrases_id
+                phrases_id = phrases_channel.id
                 typeOf_channel = "phrases"
-            if channel == set_undefined_words_channel:
+
+            if given_command == set_undefined_words_channel:
                 global undefined_words
                 undefined_words = channel
+                global undefined_words_channel
+                undefined_words_channel = discord.utils.get(msg.guild.channels, name=undefined_words)
+                global undefined_words_id
+                undefined_words_id = undefined_words_channel.id
                 typeOf_channel = "undefined_words"
-            if channel == set_history_channel:
+            if given_command == set_history_channel:
                 global history
                 history = channel
+                global history_channel
+                history_channel = discord.utils.get(msg.guild.channels, name=history)
+                global history_id
+                history_id = history_channel.id
                 typeOf_channel = "history"
             await msg.channel.send(f"{typeOf_channel} channel set to: {channel}")
         else:
