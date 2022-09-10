@@ -36,19 +36,21 @@ class myClient(discord.Client):
 
 
 async def reformat_dictionary_input(msg: discord.Message):
-    if re.search('[a-zA-z ]+:([ 1-9]+.[a-zA-z, ]+)+', msg.content):
+    if re.search(f"[a-zA-zぁ-ゔァ-ヴー々〆〤ヶ ]+[:][\n]*([ 1-9]+[.][\n]*[a-zA-z, ]+)+[\n]*", msg.content):
         msgArray = msg.content.split(":")
         term = msgArray[0]
         definitions = msgArray[1]
-        split_definitions = re.split('[1-9]*(?=.)$', definitions)
+        split_definitions = re.split('[1-9]+.', definitions)
+        split_definitions.pop(0)
         num_of_definitions = len(split_definitions)
-        reformatted_msg = term
-
-        for i, defs in range(num_of_definitions), split_definitions:
-            reformatted_msg = f"__{reformatted_msg}__: ```{i + 1}. {defs}```"
+        reformatted_msg = f"__{term}__:"
+        print(num_of_definitions)
+        print(split_definitions[0])
+        for i, defs in zip(range(num_of_definitions), split_definitions):
+            reformatted_msg = f"{reformatted_msg}```{i + 1}.{defs.strip()}```"
         sent_message = await msg.channel.send(reformatted_msg)
 
-        await history_channel.send(f"Formatted on: ``{datetime.date.today().strftime('%d-%m-%Y %H:%M:%S')}``\n "
+        await history_channel.send(f"Formatted on: ``{datetime.date.today().strftime('%m-%d-%Y %H:%M:%S')}``\n"
                                    f"New Message Link: {sent_message.jump_url}\n"
                                    f"Original Content:\n{msg.content}")
         # await history_channel.send(f"Created on: ``{datetime.date.today().strftime('%d-%m-%Y %H:%M:%S')}``\n "
@@ -59,8 +61,8 @@ async def reformat_dictionary_input(msg: discord.Message):
         await history_channel.send(
             f"ERROR IN FORMATTING: please follow the format convention\n"
             f"<word>: <#>. <definition> [optional] <#>. <definition>\n"
-            f"example 1. あわてぃーはーてぃ: 1. hurry, in a hurry\n"
-            f"example 2. でーじ : 1. Really, very 2. truly, genuinely\n\n"
+            f"example 1: あわてぃーはーてぃ: 1. hurry, in a hurry\n"
+            f"example 2: でーじ : 1. Really, very 2. truly, genuinely\n\n"
             f"content: {msg.content}")
         await msg.delete()
 
@@ -189,6 +191,7 @@ bot_channel_name = None
 bot_channel = None
 bot_channel_id = None
 
+kanji = "^[\u4E00-\u9FFF\u3400-\u4DBF\u20000-\u2A6DF\u2A700-\u2B73F\u2B740-\u2B81F\u2B820-\u2CEAF\u2CEB0-\u2EBEF\u30000-\u3134F\uF900-\uFAFF\u2E80-\u2EFF\u31C0-\u31EF\u3000-\u303F\u2FF0-\u2FFF\u3300-\u33FF\uFE30-\uFE4F\uF900-\uFAFF\u2F800-\u2FA1F\u3200-\u32FF\u1F200-\u1F2FF\u2F00-\u2FDF]+$"
 # Vitals
 intents = discord.Intents.all()
 client = myClient(intents=intents)
