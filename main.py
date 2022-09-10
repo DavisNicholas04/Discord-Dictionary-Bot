@@ -36,7 +36,7 @@ class myClient(discord.Client):
 
 
 async def reformat_dictionary_input(msg: discord.Message):
-    if re.search('[a-zA-Z]+(?=:)(?=[1-9]*(?=.)(?=[a-zA-Z, ]+))+$', msg.content):
+    if re.search('[a-zA-z ]+:([ 1-9]+.[a-zA-z, ]+)+', msg.content):
         msgArray = msg.content.split(":")
         term = msgArray[0]
         definitions = msgArray[1]
