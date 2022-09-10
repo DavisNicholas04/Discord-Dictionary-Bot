@@ -69,6 +69,7 @@ async def set_channel(msg: discord.Message):
         given_command = msg.content.split(' ')[0]
         channel = msg.content.removeprefix(given_command).strip()
         print(f"{channel}")
+        print(client.get_all_channels())
         if channel in client.get_all_channels():
             if given_command == set_dictionary_channel:
                 global dictionary
