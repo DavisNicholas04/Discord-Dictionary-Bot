@@ -1,7 +1,6 @@
 import datetime
 import os
 import re
-
 import discord
 
 
@@ -106,7 +105,7 @@ async def invalid_command(msg: discord.Message):
 # Vitals
 intents = discord.Intents.default()
 client = myClient(intents=intents)
-client.run(os.getenv("DISCORD_TOKEN"))
+client.run(os.environ['DISCORD_TOKEN'])
 
 # Messages
 channel_does_not_exist = \
