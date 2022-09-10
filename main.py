@@ -1,4 +1,5 @@
 import datetime
+import os
 import re
 
 import discord
@@ -141,8 +142,8 @@ set_history_channel = "setHist/"
 
 
 client = myClient()
-client.run('')
-
+client.run(os.getenv("DISCORD_TOKEN"))
+#permission int 93184
 # elif inBotChannel and msg.content.startswith("setDict/"):
 # if channel in discord.Guild.text_channels:
 #     dictionary = channel
