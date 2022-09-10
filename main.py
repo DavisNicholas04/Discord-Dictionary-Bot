@@ -3,6 +3,7 @@ import os
 import re
 import discord
 
+print(os.)
 
 class myClient(discord.Client):
 
@@ -105,7 +106,7 @@ async def invalid_command(msg: discord.Message):
 # Vitals
 intents = discord.Intents.default()
 client = myClient(intents=intents)
-client.run(os.environ['DISCORD_TOKEN'])
+client.run(os.environ.get("DISCORD_TOKEN"))
 
 # Messages
 channel_does_not_exist = \
