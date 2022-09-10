@@ -20,14 +20,13 @@ class myClient(discord.Client):
 
     async def on_message(self, msg: discord.Message):
         in_bot_channel = msg.channel.name == bot_channel_name
-        in_dictionary_channel = msg.channel.name == dictionary
+        in_dictionary_channel = msg.channel.name == "dictionary"
         in_phrases_channel = msg.channel.name == phrases
         in_history_channel = msg.channel.name == history
         # if msg.author == client.user:
         #     return
-        if msg.content.startswith("hello"):
-            await bot_channel.send("yo")
-        elif in_bot_channel:
+
+        if in_bot_channel:
             await set_channel(msg)
         elif in_dictionary_channel:
             await reformat_dictionary_input(msg)
@@ -37,7 +36,7 @@ class myClient(discord.Client):
 
 
 async def reformat_dictionary_input(msg: discord.Message):
-    if re.search('[a-zA-Z]+(?=:)(?=[1-9]*(?=.)(?=[a-zA-Z, ]+))+$', msg.content):
+    if re.search('[1-9]*(?=.)(?=[a-zA-Z]+(?=:)(?=[1-9]*(?=.)(?=[a-zA-Z, ]+)))+$', msg.content):
         msgArray = msg.content.split(":")
         term = msgArray[0]
         definitions = msgArray[1]
@@ -56,6 +55,14 @@ async def reformat_dictionary_input(msg: discord.Message):
         #                            f"Link: {sent_message.jump_url}\n"
         #                            f"Content:\n{sent_message}")
         await msg.delete()
+    else:
+        await history_channel.send(
+            f"ERROR IN FORMATTING: please follow the format convention\n"
+            f"<word>: <#>. <definition> [optional] <#>. <definition>\n"
+            f"example 1: あわてぃーはーてぃ: 1. hurry, in a hurry\n"
+            f"example 2: でーじ : 1. Really, very 2. truly, genuinely\n\n"
+            f"content: {msg}")
+        await msg.delete()
 
 
 async def set_channel(msg: discord.Message):
@@ -68,9 +75,8 @@ async def set_channel(msg: discord.Message):
     if valid_command:
         given_command = msg.content.split(' ')[0]
         channel = msg.content.removeprefix(given_command).strip()
-        print(f"{channel}")
-        print(client.get_all_channels())
-        if channel in client.get_all_channels():
+        print(given_command)
+        if channel in ["dictionary", "文と句", "needs-translation", "history", "bot-commands"]:
             if given_command == set_dictionary_channel:
                 global dictionary
                 dictionary = channel
@@ -117,6 +123,7 @@ async def set_channel(msg: discord.Message):
 async def invalid_command(msg: discord.Message):
     await msg.channel.send(f"```{msg}``` is not a valid command")
 
+
 # Messages
 channel_does_not_exist = \
     """This channel does not exist.```
@@ -158,8 +165,6 @@ intents = discord.Intents.all()
 client = myClient(intents=intents)
 load_dotenv()
 client.run(os.environ['DISCORD_TOKEN'])
-
-
 
 # elif inBotChannel and msg.content.startswith("setDict/"):
 # if channel in discord.Guild.text_channels:
