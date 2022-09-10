@@ -19,6 +19,8 @@ history = None
 history_channel: discord.TextChannel
 history_id = None
 
+bot_channel = discord.Guild.get_channel("bot-commands")
+bot_channel_id = bot_channel.id
 
 class myClient(discord.Client):
 
@@ -26,7 +28,7 @@ class myClient(discord.Client):
         print(f'Logged in as {{client.user}}'.format(client))
 
     async def actions(self, msg: discord.Message):
-        in_bot_channel = msg.channel.name == "bot_commands"
+        in_bot_channel = msg.channel.name == bot_channel
         in_dictionary_channel = msg.channel.name == dictionary
         in_phrases_channel = msg.channel.name == phrases
         in_history_channel = msg.channel.name == history
@@ -136,6 +138,7 @@ set_dictionary_channel = "setDict/"
 set_phrase_channel = "setPhrase/"
 set_undefined_words_channel = "setUWords/"
 set_history_channel = "setHist/"
+
 
 client = myClient()
 client.run('')
