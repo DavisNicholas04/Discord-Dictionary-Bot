@@ -3,8 +3,6 @@ import os
 import re
 import discord
 
-print(os.)
-
 class myClient(discord.Client):
 
     async def on_ready(self):
