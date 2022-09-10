@@ -4,24 +4,6 @@ import re
 
 import discord
 
-dictionary = None
-dictionary_channel: discord.TextChannel
-dictionary_id = None
-
-phrases = None
-phrases_channel: discord.TextChannel
-phrases_id = None
-
-undefined_words = None
-undefined_words_channel: discord.TextChannel
-undefined_words_id = None
-
-history = None
-history_channel: discord.TextChannel
-history_id = None
-
-bot_channel = discord.Guild.get_channel("bot-commands")
-bot_channel_id = bot_channel.id
 
 class myClient(discord.Client):
 
@@ -44,11 +26,6 @@ class myClient(discord.Client):
             await invalid_command(msg)
         return
 
-    async def on_message(self, msg):
-        if msg.author == client.user:
-            return
-        # elif msg.channel.name
-
 
 async def reformat_dictionary_input(msg: discord.Message):
     if re.search('[a-zA-Z]+(?=:)(?=[1-9]*(?=.)(?=[a-zA-Z, ]+))+$', msg.content):
@@ -69,17 +46,18 @@ async def reformat_dictionary_input(msg: discord.Message):
         # await history_channel.send(f"Created on: ``{datetime.date.today().strftime('%d-%m-%Y %H:%M:%S')}``\n "
         #                            f"Link: {sent_message.jump_url}\n"
         #                            f"Content:\n{sent_message}")
-        msg.delete()
+        await msg.delete()
+
 
 async def set_channel(msg: discord.Message):
     valid_command = \
-            msg.content.startswith(set_dictionary_channel) or\
-            msg.content.startswith(set_phrase_channel) or\
-            msg.content.startswith(set_undefined_words_channel) or\
-            msg.content.startswith(set_history_channel)
+        msg.content.startswith(set_dictionary_channel) or \
+        msg.content.startswith(set_phrase_channel) or \
+        msg.content.startswith(set_undefined_words_channel) or \
+        msg.content.startswith(set_history_channel)
     typeOf_channel = ""
     if valid_command:
-        given_command = msg.content.split('/')[0]+"/"
+        given_command = msg.content.split('/')[0] + "/"
         channel = msg.content.removeprefix(given_command).strip()
         if channel in discord.Guild.text_channels:
             if given_command == set_dictionary_channel:
@@ -125,6 +103,11 @@ async def invalid_command(msg: discord.Message):
     await msg.channel.send(f"```{msg}``` is not a valid command")
 
 
+# Vitals
+intents = discord.Intents.default()
+client = myClient(intents=intents)
+client.run(os.getenv("DISCORD_TOKEN"))
+
 # Messages
 channel_does_not_exist = \
     """This channel does not exist.
@@ -134,16 +117,34 @@ channel_does_not_exist = \
     3. Ensure that you actually created this channel
     \'\'\'
     """
-# bot channel commands and variables
+
+# Bot channel commands and variables
 set_dictionary_channel = "setDict/"
 set_phrase_channel = "setPhrase/"
 set_undefined_words_channel = "setUWords/"
 set_history_channel = "setHist/"
+all_channels_iterator = client.get_all_channels()
 
+dictionary = None
+dictionary_channel: discord.TextChannel
+dictionary_id = None
 
-client = myClient()
-client.run(os.getenv("DISCORD_TOKEN"))
-#permission int 93184
+phrases = None
+phrases_channel: discord.TextChannel
+phrases_id = None
+
+undefined_words = None
+undefined_words_channel: discord.TextChannel
+undefined_words_id = None
+
+history = None
+history_channel: discord.TextChannel
+history_id = None
+
+bot_channel_name = "bot-commands"
+bot_channel = discord.utils.get(all_channels_iterator, name=bot_channel_name)
+bot_channel_id = bot_channel.id
+
 # elif inBotChannel and msg.content.startswith("setDict/"):
 # if channel in discord.Guild.text_channels:
 #     dictionary = channel
