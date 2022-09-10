@@ -1,7 +1,9 @@
 import datetime
-import os
 import re
+import os
 import discord
+from dotenv import load_dotenv
+
 
 class myClient(discord.Client):
 
@@ -104,7 +106,8 @@ async def invalid_command(msg: discord.Message):
 # Vitals
 intents = discord.Intents.default()
 client = myClient(intents=intents)
-client.run(os.environ.get("DISCORD_TOKEN"))
+load_dotenv()
+client.run(os.environ['DISCORD_TOKEN'])
 
 # Messages
 channel_does_not_exist = \
