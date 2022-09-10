@@ -120,10 +120,10 @@ channel_does_not_exist = \
     """
 
 # Bot channel commands and variables
-set_dictionary_channel = "setDict/"
-set_phrase_channel = "setPhrase/"
-set_undefined_words_channel = "setUWords/"
-set_history_channel = "setHist/"
+set_dictionary_channel = "/setDict"
+set_phrase_channel = "/setPhrase"
+set_undefined_words_channel = "/setUWords"
+set_history_channel = "/setHist"
 all_channels_iterator = client.get_all_channels()
 
 dictionary = None
