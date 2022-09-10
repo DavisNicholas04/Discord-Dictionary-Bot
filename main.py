@@ -9,16 +9,25 @@ class myClient(discord.Client):
 
     async def on_ready(self):
         print(f"Logged in as {client.user}".format(client))
+        global all_channels_iterator
+        all_channels_iterator = client.get_all_channels()
+        global bot_channel_name
+        bot_channel_name = "bot-commands"
+        global bot_channel
+        bot_channel = discord.utils.get(all_channels_iterator, name=bot_channel_name)
+        global bot_channel_id
+        bot_channel_id = bot_channel.id
 
-    async def actions(self, msg: discord.Message):
-        in_bot_channel = msg.channel.name == bot_channel
+    async def on_message(self, msg: discord.Message):
+        in_bot_channel = msg.channel.name == bot_channel_name
         in_dictionary_channel = msg.channel.name == dictionary
         in_phrases_channel = msg.channel.name == phrases
         in_history_channel = msg.channel.name == history
-
-        if msg.author == client.user:
-            return
-        if in_bot_channel:
+        # if msg.author == client.user:
+        #     return
+        if msg.content.startswith("hello"):
+            await bot_channel.send("yo")
+        elif in_bot_channel:
             await set_channel(msg)
         elif in_dictionary_channel:
             await reformat_dictionary_input(msg)
@@ -57,9 +66,10 @@ async def set_channel(msg: discord.Message):
         msg.content.startswith(set_history_channel)
     typeOf_channel = ""
     if valid_command:
-        given_command = msg.content.split('/')[0] + "/"
+        given_command = msg.content.split(' ')[0]
         channel = msg.content.removeprefix(given_command).strip()
-        if channel in discord.Guild.text_channels:
+        print(f"{channel}")
+        if channel in client.get_all_channels():
             if given_command == set_dictionary_channel:
                 global dictionary
                 dictionary = channel
@@ -69,7 +79,7 @@ async def set_channel(msg: discord.Message):
                 dictionary_id = dictionary_channel.id
                 typeOf_channel = "dictionary"
 
-            if given_command == set_phrase_channel:
+            elif given_command == set_phrase_channel:
                 global phrases
                 phrases = channel
                 global phrases_channel
@@ -78,7 +88,7 @@ async def set_channel(msg: discord.Message):
                 phrases_id = phrases_channel.id
                 typeOf_channel = "phrases"
 
-            if given_command == set_undefined_words_channel:
+            elif given_command == set_undefined_words_channel:
                 global undefined_words
                 undefined_words = channel
                 global undefined_words_channel
@@ -86,7 +96,8 @@ async def set_channel(msg: discord.Message):
                 global undefined_words_id
                 undefined_words_id = undefined_words_channel.id
                 typeOf_channel = "undefined_words"
-            if given_command == set_history_channel:
+
+            elif given_command == set_history_channel:
                 global history
                 history = channel
                 global history_channel
@@ -94,7 +105,10 @@ async def set_channel(msg: discord.Message):
                 global history_id
                 history_id = history_channel.id
                 typeOf_channel = "history"
-            await msg.channel.send(f"{typeOf_channel} channel set to: {channel}")
+
+            if typeOf_channel != "":
+                await msg.channel.send(f"{typeOf_channel} channel set to: {channel}")
+                return
         else:
             await msg.channel.send(channel_does_not_exist)
 
@@ -102,21 +116,13 @@ async def set_channel(msg: discord.Message):
 async def invalid_command(msg: discord.Message):
     await msg.channel.send(f"```{msg}``` is not a valid command")
 
-
-# Vitals
-intents = discord.Intents.default()
-client = myClient(intents=intents)
-load_dotenv()
-client.run(os.environ['DISCORD_TOKEN'])
-
 # Messages
 channel_does_not_exist = \
-    """This channel does not exist.
-    \'\'\'
+    """This channel does not exist.```
     1. Check your spelling
     2. Check your capitalization 
     3. Ensure that you actually created this channel
-    \'\'\'
+    ```
     """
 
 # Bot channel commands and variables
@@ -124,7 +130,7 @@ set_dictionary_channel = "/setDict"
 set_phrase_channel = "/setPhrase"
 set_undefined_words_channel = "/setUWords"
 set_history_channel = "/setHist"
-all_channels_iterator = client.get_all_channels()
+all_channels_iterator = None
 
 dictionary = None
 dictionary_channel: discord.TextChannel
@@ -142,9 +148,17 @@ history = None
 history_channel: discord.TextChannel
 history_id = None
 
-bot_channel_name = "bot-commands"
-bot_channel = discord.utils.get(all_channels_iterator, name=bot_channel_name)
-bot_channel_id = bot_channel.id
+bot_channel_name = None
+bot_channel = None
+bot_channel_id = None
+
+# Vitals
+intents = discord.Intents.all()
+client = myClient(intents=intents)
+load_dotenv()
+client.run(os.environ['DISCORD_TOKEN'])
+
+
 
 # elif inBotChannel and msg.content.startswith("setDict/"):
 # if channel in discord.Guild.text_channels:
