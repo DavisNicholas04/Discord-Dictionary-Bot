@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 class myClient(discord.Client):
 
     async def on_ready(self):
-        print(f'Logged in as {{client.user}}'.format(client))
+        print(f"Logged in as {client.user}".format(client))
 
     async def actions(self, msg: discord.Message):
         in_bot_channel = msg.channel.name == bot_channel
