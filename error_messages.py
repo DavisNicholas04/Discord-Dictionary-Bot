@@ -15,10 +15,11 @@ async def channel_does_not_exist(channel: discord.TextChannel):
     )
 
 
-async def formatting_error(msg: discord.Message, history_channel: discord.TextChannel):
-    await history_channel.send(
+async def formatting_error(msg: discord.Message, error_channel: discord.TextChannel):
+    await error_channel.send(
         f"ERROR IN FORMATTING: please follow the format convention\n"
         f"<word>: <#>. <definition> [optional] <#>. <definition>\n"
         f"example 1: あわてぃーはーてぃ: 1. hurry, in a hurry\n"
-        f"example 2: でーじ : 1. Really, very 2. truly, genuinely\n\n"
-        f"content: {msg.content}")
+        f"example 2: でーじ : 1. Really, very 2. truly, genuinely\n"
+        f"author: {msg.author.name}: {msg.author.discriminator}\n"
+        f"content: ``{msg.content}``\n``` ```")

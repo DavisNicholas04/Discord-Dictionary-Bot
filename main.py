@@ -28,6 +28,14 @@ class myClient(discord.Client):
             await set_channel(msg)
         elif await is_in_channel(msg, dictionary_channel):
             await reformat_dictionary_input(msg)
+        elif await is_in_channel(msg, undefined_words_channel) or await is_in_channel(msg, phrases_channel):
+            return
+        elif await is_in_channel(msg, history_channel):
+            await msg.channel.send("You should not be here, this is my channel. I'm deleting your message from MY channel.\n-")
+            history_msg_content = msg.content
+            await msg.delete()
+            await history_channel.send(f"MESSAGE DELETED FROM {history_name} channel.\nauthor:{msg.author.name}: {msg.author.discriminator}\ncontent:\n{history_msg_content}\n``` ```")
+            return
         else:
             await error.invalid_command(msg)
         return
@@ -48,10 +56,11 @@ async def reformat_dictionary_input(msg: discord.Message):
 
         await history_channel.send(f"Formatted on: ``{datetime.datetime.now().strftime('%m-%d-%Y %H:%M:%S')}``\n"
                                    f"New Message Link: {sent_message.jump_url}\n"
-                                   f"Original Content:\n{msg.content}")
+                                   f"author: {msg.author.name}: {msg.author.discriminator}\n"
+                                   f"Original Content:\n{msg.content}\n``` ```")
         await msg.delete()
     else:
-        await error.formatting_error(msg, history_channel)
+        await error.formatting_error(msg, error_channel)
         await msg.delete()
 
 
@@ -107,7 +116,8 @@ async def set_channel(msg: discord.Message):
                 return
         else:
             await error.channel_does_not_exist(msg.channel)
-
+    else:
+        await error.invalid_command(msg)
 
 async def set_channels_defaults():
     text_channels_list = bot_channel.guild.text_channels
@@ -138,6 +148,13 @@ async def set_channels_defaults():
     history_channel = discord.utils.get(text_channels_list, name=history_name)
     global history_id
     history_id = history_channel.id
+
+    global error_channel_name
+    error_channel_name = "errors"
+    global error_channel
+    error_channel = discord.utils.get(text_channels_list, name=error_channel_name)
+    global error_channel_id
+    error_channel_id = error_channel.id
 
 
 async def is_in_channel(msg: discord.Message, channel: discord.TextChannel):
@@ -173,6 +190,10 @@ history_id = None
 bot_channel_name = None
 bot_channel: discord.TextChannel
 bot_channel_id = None
+
+error_channel_name = None
+error_channel: discord.TextChannel
+error_channel_id = None
 
 # Vitals
 intents = discord.Intents.all()
