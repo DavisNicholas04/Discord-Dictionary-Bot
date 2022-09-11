@@ -28,7 +28,9 @@ class myClient(discord.Client):
             await set_channel(msg)
         elif await is_in_channel(msg, dictionary_channel):
             await reformat_dictionary_input(msg)
-        elif await is_in_channel(msg, undefined_words_channel) or await is_in_channel(msg, phrases_channel):
+        elif await is_in_channel(msg, undefined_words_channel) \
+                or await is_in_channel(msg, phrases_channel) \
+                or (msg, discord.utils.get(client.get_all_channels(), name="general")):
             return
         elif await is_in_channel(msg, history_channel):
             await msg.channel.send("You should not be here, this is my channel. I'm deleting your message from MY channel.\n-")
