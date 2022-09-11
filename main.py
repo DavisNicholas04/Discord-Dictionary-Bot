@@ -28,6 +28,14 @@ class myClient(discord.Client):
             await set_channel(msg)
         elif await is_in_channel(msg, dictionary_channel):
             await reformat_dictionary_input(msg)
+        elif await is_in_channel(msg, undefined_words_channel) or await is_in_channel(msg, phrases_channel):
+            return
+        elif await is_in_channel(msg, history_channel):
+            await msg.channel.send("You should not be here, this is my channel. I'm deleting your message from MY channel.")
+            history_msg_content = msg.content
+            await msg.delete()
+            await history_channel.send(f"MESSAGE DELETED FROM {history_name} channel.\nauthor:{msg.author.name}\ncontent:\n{history_msg_content}")
+            return
         else:
             await error.invalid_command(msg)
         return
@@ -107,7 +115,8 @@ async def set_channel(msg: discord.Message):
                 return
         else:
             await error.channel_does_not_exist(msg.channel)
-
+    else:
+        await error.invalid_command(msg)
 
 async def set_channels_defaults():
     text_channels_list = bot_channel.guild.text_channels
