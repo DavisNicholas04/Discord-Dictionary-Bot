@@ -17,18 +17,15 @@ class myClient(discord.Client):
         bot_channel = discord.utils.get(all_channels_iterator, name=bot_channel_name)
         global bot_channel_id
         bot_channel_id = bot_channel.id
-        await set_channels_for_testing(bot_channel)
+        await set_channels_defaults(bot_channel)
+
 
     async def on_message(self, msg: discord.Message):
-        in_bot_channel = msg.channel.name == bot_channel_name
-        in_dictionary_channel = msg.channel.name == "dictionary"
-        in_phrases_channel = msg.channel.name == phrases
-        in_history_channel = msg.channel.name == history
         if msg.author == client.user:
             return
-        if in_bot_channel:
+        if await is_in_channel(msg, bot_channel):
             await set_channel(msg)
-        elif in_dictionary_channel:
+        elif await is_in_channel(msg, dictionary_channel):
             await reformat_dictionary_input(msg)
         else:
             await invalid_command(msg)
@@ -36,7 +33,7 @@ class myClient(discord.Client):
 
 
 async def reformat_dictionary_input(msg: discord.Message):
-    if re.search(f"[a-zA-zぁ-ゔァ-ヴー々〆〤ヶ ]+[:][\n]*([ 1-9]+[.][\n]*[a-zA-z, ]+)+[\n]*", msg.content):
+    if re.search(f"[a-zA-zぁ-ゔァ-ヴー々〆〤ヶ ]+[:][\n]*([ 1-9]+[.][\n]*[a-zA-zぁ-ゔァ-ヴー々〆〤ヶ, ]+)+[\n]*", msg.content):
         msgArray = msg.content.split(":")
         term = msgArray[0]
         definitions = msgArray[1]
@@ -44,13 +41,11 @@ async def reformat_dictionary_input(msg: discord.Message):
         split_definitions.pop(0)
         num_of_definitions = len(split_definitions)
         reformatted_msg = f"__{term}__:"
-        print(num_of_definitions)
-        print(split_definitions[0])
         for i, defs in zip(range(num_of_definitions), split_definitions):
             reformatted_msg = f"{reformatted_msg}```{i + 1}.{defs.strip()}```"
         sent_message = await msg.channel.send(reformatted_msg)
 
-        await history_channel.send(f"Formatted on: ``{datetime.date.today().strftime('%m-%d-%Y %H:%M:%S')}``\n"
+        await history_channel.send(f"Formatted on: ``{datetime.datetime.now().strftime('%m-%d-%Y %H:%M:%S')}``\n"
                                    f"New Message Link: {sent_message.jump_url}\n"
                                    f"Original Content:\n{msg.content}")
         # await history_channel.send(f"Created on: ``{datetime.date.today().strftime('%d-%m-%Y %H:%M:%S')}``\n "
@@ -73,26 +68,25 @@ async def set_channel(msg: discord.Message):
         msg.content.startswith(set_phrase_channel) or \
         msg.content.startswith(set_undefined_words_channel) or \
         msg.content.startswith(set_history_channel)
-    typeOf_channel = ""
+    typeOf_channel = None
     if valid_command:
         given_command = msg.content.split(' ')[0]
         channel = msg.content.removeprefix(given_command).strip()
-        print(given_command)
-        if channel in ["dictionary", "文と句", "needs-translation", "history", "bot-commands"]:
+        if channel in os.environ['DEFAULT_CHANNELS']:
             if given_command == set_dictionary_channel:
-                global dictionary
-                dictionary = channel
+                global dictionary_name
+                dictionary_name = channel
                 global dictionary_channel
-                dictionary_channel = discord.utils.get(msg.guild.channels, name=dictionary)
+                dictionary_channel = discord.utils.get(msg.guild.channels, name=dictionary_name)
                 global dictionary_id
                 dictionary_id = dictionary_channel.id
                 typeOf_channel = "dictionary"
 
             elif given_command == set_phrase_channel:
-                global phrases
-                phrases = channel
+                global phrases_name
+                phrases_name = channel
                 global phrases_channel
-                phrases_channel = discord.utils.get(msg.guild.channels, name=phrases)
+                phrases_channel = discord.utils.get(msg.guild.channels, name=phrases_name)
                 global phrases_id
                 phrases_id = phrases_channel.id
                 typeOf_channel = "phrases"
@@ -107,10 +101,10 @@ async def set_channel(msg: discord.Message):
                 typeOf_channel = "undefined_words"
 
             elif given_command == set_history_channel:
-                global history
-                history = channel
+                global history_name
+                history_name = channel
                 global history_channel
-                history_channel = discord.utils.get(msg.guild.channels, name=history)
+                history_channel = discord.utils.get(msg.guild.channels, name=history_name)
                 global history_id
                 history_id = history_channel.id
                 typeOf_channel = "history"
@@ -125,18 +119,19 @@ async def set_channel(msg: discord.Message):
 async def invalid_command(msg: discord.Message):
     await msg.channel.send(f"```{msg.content}``` is not a valid command")
 
-async def set_channels_for_testing(bot_channel):
-    global dictionary
-    dictionary = "dictionary"
+
+async def set_channels_defaults(bot_channel):
+    global dictionary_name
+    dictionary_name = "dictionary"
     global dictionary_channel
-    dictionary_channel = discord.utils.get(bot_channel.guild.text_channels, name=dictionary)
+    dictionary_channel = discord.utils.get(bot_channel.guild.text_channels, name=dictionary_name)
     global dictionary_id
     dictionary_id = dictionary_channel.id
 
-    global phrases
-    phrases = "文と句"
+    global phrases_name
+    phrases_name = "文と句"
     global phrases_channel
-    phrases_channel = discord.utils.get(bot_channel.guild.text_channels, name=phrases)
+    phrases_channel = discord.utils.get(bot_channel.guild.text_channels, name=phrases_name)
     global phrases_id
     phrases_id = phrases_channel.id
 
@@ -147,12 +142,19 @@ async def set_channels_for_testing(bot_channel):
     global undefined_words_id
     undefined_words_id = undefined_words_channel.id
 
-    global history
-    history = "history"
+    global history_name
+    history_name = "history"
     global history_channel
-    history_channel = discord.utils.get(bot_channel.guild.text_channels, name=history)
+    history_channel = discord.utils.get(bot_channel.guild.text_channels, name=history_name)
     global history_id
     history_id = history_channel.id
+
+
+async def is_in_channel(msg: discord.Message, channel: discord.TextChannel):
+    if msg.channel == channel:
+        return True
+    else:
+        return False
 
 
 # Messages
@@ -171,11 +173,11 @@ set_undefined_words_channel = "/setUWords"
 set_history_channel = "/setHist"
 all_channels_iterator = None
 
-dictionary = None
+dictionary_name = None
 dictionary_channel: discord.TextChannel
 dictionary_id = None
 
-phrases = None
+phrases_name = None
 phrases_channel: discord.TextChannel
 phrases_id = None
 
@@ -183,15 +185,14 @@ undefined_words = None
 undefined_words_channel: discord.TextChannel
 undefined_words_id = None
 
-history = None
+history_name = None
 history_channel: discord.TextChannel
 history_id = None
 
 bot_channel_name = None
-bot_channel = None
+bot_channel: discord.TextChannel
 bot_channel_id = None
 
-kanji = "^[\u4E00-\u9FFF\u3400-\u4DBF\u20000-\u2A6DF\u2A700-\u2B73F\u2B740-\u2B81F\u2B820-\u2CEAF\u2CEB0-\u2EBEF\u30000-\u3134F\uF900-\uFAFF\u2E80-\u2EFF\u31C0-\u31EF\u3000-\u303F\u2FF0-\u2FFF\u3300-\u33FF\uFE30-\uFE4F\uF900-\uFAFF\u2F800-\u2FA1F\u3200-\u32FF\u1F200-\u1F2FF\u2F00-\u2FDF]+$"
 # Vitals
 intents = discord.Intents.all()
 client = myClient(intents=intents)
