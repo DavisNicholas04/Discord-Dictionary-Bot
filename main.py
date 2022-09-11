@@ -20,31 +20,30 @@ class myClient(discord.Client):
         bot_channel_id = bot_channel.id
         await set_channels_defaults()
 
-
     async def on_message(self, msg: discord.Message):
         if msg.author == client.user:
             return
         if await is_in_channel(msg, bot_channel):
             await set_channel(msg)
+
         elif await is_in_channel(msg, dictionary_channel):
             await reformat_dictionary_input(msg)
-        elif await is_in_channel(msg, undefined_words_channel) \
-                or await is_in_channel(msg, phrases_channel) \
-                or (msg, discord.utils.get(client.get_all_channels(), name="general")):
-            return
+
         elif await is_in_channel(msg, history_channel):
-            await msg.channel.send("You should not be here, this is my channel. I'm deleting your message from MY channel.\n-")
+            await msg.channel.send(
+                "You should not be here, this is my channel. I'm deleting your message from MY channel.\n-")
             history_msg_content = msg.content
             await msg.delete()
-            await history_channel.send(f"MESSAGE DELETED FROM {history_name} channel.\nauthor:{msg.author.name}: {msg.author.discriminator}\ncontent:\n{history_msg_content}\n``` ```")
+            await history_channel.send(
+                f"MESSAGE DELETED FROM {history_name} channel.\nauthor:{msg.author.name}: {msg.author.discriminator}\ncontent:\n{history_msg_content}\n``` ```")
             return
-        else:
-            await error.invalid_command(msg)
         return
 
 
 async def reformat_dictionary_input(msg: discord.Message):
-    if re.search(f"[a-zA-zぁ-ゔァ-ヴー々〆〤ヶ{os.environ['KANJI']} ]+[:][\n]*([ 1-9]+[.][\n]*[a-zA-zぁ-ゔァ-ヴー々〆〤ヶ,{os.environ['KANJI']} ]+)+[\n]*", msg.content):
+    if re.search(
+            f"[a-zA-zぁ-ゔァ-ヴー々〆〤ヶ{os.environ['KANJI']} ]+[:][\n]*([ 1-9]+[.][\n]*[a-zA-zぁ-ゔァ-ヴー々〆〤ヶ,{os.environ['KANJI']} ]+)+[\n]*",
+            msg.content):
         msgArray = msg.content.split(":")
         term = msgArray[0]
         definitions = msgArray[1]
@@ -120,6 +119,7 @@ async def set_channel(msg: discord.Message):
             await error.channel_does_not_exist(msg.channel)
     else:
         await error.invalid_command(msg)
+
 
 async def set_channels_defaults():
     text_channels_list = bot_channel.guild.text_channels
@@ -202,4 +202,3 @@ intents = discord.Intents.all()
 client = myClient(intents=intents)
 load_dotenv()
 client.run(os.environ['DISCORD_TOKEN'])
-
