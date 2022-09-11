@@ -8,10 +8,10 @@ format users must follow:
 
 1. ```<word>: <number>. <defintion>  <definition set>```
   
-  <word>: word you want to define
-  <number>: words can have multiple definitions, use a number to separate them
-  <definition>: the definition you want to assign to this entries word
-  <definition set>: <number>. <definition> | EMPTY
+    - \<word>: word you want to define
+    - \<number>: words can have multiple definitions, use a number to separate them
+    - \<definition>: the definition you want to assign to this entries word
+    - \<definition set>: <number>. <definition> | EMPTY
   
 2. more formats comming soon
  
