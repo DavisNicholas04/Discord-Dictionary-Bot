@@ -30,14 +30,16 @@ class myClient(discord.Client):
             await reformat_dictionary_input(msg)
 
         elif await is_in_channel(msg, history_channel):
-            await msg.channel.send(
-                "You should not be here, this is my channel. I'm deleting your message from MY channel.\n-")
-            history_msg_content = msg.content
-            await msg.delete()
-            await history_channel.send(
-                f"MESSAGE DELETED FROM {history_name} channel.\nauthor:{msg.author.name}: {msg.author.discriminator}\ncontent:\n{history_msg_content}\n``` ```")
-            return
+            await error.non_writing_channel(msg, history_channel)
+
+        elif await is_in_channel(msg, alpha_dict_channel):
+            await check_commands(msg)
         return
+
+
+async def check_commands(msg: discord.Message):
+    if msg.content == alphabetize_command:
+        await alphabetize_dictionary()
 
 
 async def reformat_dictionary_input(msg: discord.Message):
@@ -50,13 +52,14 @@ async def reformat_dictionary_input(msg: discord.Message):
         split_definitions = re.split('[1-9]+.', definitions)
         split_definitions.pop(0)
         num_of_definitions = len(split_definitions)
-        reformatted_msg = f"__{term}__:"
+        index = get_most_recent_msg_index(dictionary_channel)
+        reformatted_msg = f"{index}. __{term}__:"
         for i, defs in zip(range(num_of_definitions), split_definitions):
             reformatted_msg = f"{reformatted_msg}```{i + 1}.{defs.strip()}```"
         sent_message = await msg.channel.send(reformatted_msg)
-
         await history_channel.send(f"Formatted on: ``{datetime.datetime.now().strftime('%m-%d-%Y %H:%M:%S')}``\n"
                                    f"New Message Link: {sent_message.jump_url}\n"
+                                   f"index: {index}\n"
                                    f"author: {msg.author.name}: {msg.author.discriminator}\n"
                                    f"Original Content:\n{msg.content}\n``` ```")
         await msg.delete()
@@ -64,6 +67,11 @@ async def reformat_dictionary_input(msg: discord.Message):
         await error.formatting_error(msg, error_channel)
         await msg.delete()
 
+
+async def get_most_recent_msg_index(channel: discord.TextChannel):
+    recent_msg: discord.Message = [msg async for msg in channel.history(limit=1)][0]
+    index = recent_msg.content.split(".", 1)[0]
+    return int(index) + 1
 
 async def set_channel(msg: discord.Message):
     valid_command = \
@@ -158,6 +166,13 @@ async def set_channels_defaults():
     global error_channel_id
     error_channel_id = error_channel.id
 
+    global alpha_dict_name
+    alpha_dict_name = "alphabetical-order-dictionary"
+    global alpha_dict_channel
+    alpha_dict_channel = discord.utils.get(text_channels_list, name=alpha_dict_name)
+    global alpha_dict_channel_id
+    alpha_dict_channel_id = alpha_dict_channel.id
+
 
 async def is_in_channel(msg: discord.Message, channel: discord.TextChannel):
     if msg.channel == channel:
@@ -166,11 +181,35 @@ async def is_in_channel(msg: discord.Message, channel: discord.TextChannel):
         return False
 
 
+
+
+
+async def alphabetize_dictionary():
+    messages_list = [message.content async for message in dictionary_channel.history()]
+    num_of_msgs = messages_list.__len__()
+    await alpha_dict_channel.purge(limit=num_of_msgs)
+    messages_list.sort(key=sort_by_word)
+    for message in messages_list:
+        await alpha_dict_channel.send(message)
+    await history_channel.send(
+        f"{alpha_dict_name} was updated on {datetime.datetime.now().strftime('%m-%d-%Y %H:%M:%S')}"
+        f"\nThere are now {num_of_msgs} entries")
+
+
+def sort_by_word(content):
+    word = content.split(":", 1)[0]
+    return word
+
+
+
 # Bot channel commands and variables
 set_dictionary_channel = "/setDict"
 set_phrase_channel = "/setPhrase"
 set_undefined_words_channel = "/setUWords"
 set_history_channel = "/setHist"
+set_alpha_dict_channel = "/setAZDict"
+alphabetize_command = "/alphabetize"
+
 all_channels_iterator = None
 
 dictionary_name = None
@@ -196,6 +235,10 @@ bot_channel_id = None
 error_channel_name = None
 error_channel: discord.TextChannel
 error_channel_id = None
+
+alpha_dict_name = None
+alpha_dict_channel: discord.TextChannel
+alpha_dict_channel_id = None
 
 # Vitals
 intents = discord.Intents.all()
