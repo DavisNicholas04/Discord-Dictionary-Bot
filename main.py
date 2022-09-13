@@ -53,7 +53,7 @@ async def check_dict_commands(msg: discord.Message):
         command_removed_entry = msg.content.removeprefix(dict_edit).strip()
         entry_word = command_removed_entry.split(" ", 1)[0].strip()
         entry_word_removed_entry = command_removed_entry.removeprefix(entry_word)
-        option_and_update = entry_word_removed_entry.split("=")
+        option_and_update = entry_word_removed_entry.split("=", 1)
         searched_msg: discord.Message = await search(entry_word, dictionary_channel)
         if searched_msg is None:
             cant_find_msg = await dictionary_channel.send(
@@ -88,7 +88,8 @@ async def check_dict_commands(msg: discord.Message):
                 # the case where we edit word x on the y+1 definition.
                 # <Word>: ...```<num+0>. <def>``` ```<num+1>.| <def>|```...
                 split_def = searched_msg.content.split("```" + num + ".", 1)
-                if split_def.__len__() == 1:
+                num_of_defs = re.split("[1-9]+.", searched_msg.content).__len__()
+                if split_def.__len__() == 1 and num_of_defs > 2:
                     def_num_not_found = await dictionary_channel.send(
                         f"Could not find definition #{num} of {entry_word} in the dictionary. "
                         f"make sure it was typed correctly. this message will expire in 30 sec"
