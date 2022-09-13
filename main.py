@@ -13,7 +13,7 @@ client = discord.Client(intents=intents)
 
 @client.event
 async def on_ready():
-    print("Logged in as {{client.user}}".format(client))
+    print(f"Logged in as {client.user}")
     global all_channels_iterator
     all_channels_iterator = client.get_all_channels()
     global bot_channel_name
@@ -121,6 +121,24 @@ async def check_dict_commands(msg: discord.Message):
             await error.edit_def_error(msg, error_channel, "name=", "num=",
                                        instead_of=f" \"{option_and_update[0].strip()}\"")
             return
+
+    elif msg.content.startswith(dict_add):
+        command_removed_entry = msg.content.removeprefix(dict_add).strip()
+        entry_word = command_removed_entry.split(" ", 1)[0].strip()
+        entry_word_removed_entry = command_removed_entry.removeprefix(entry_word)
+        option_and_update = entry_word_removed_entry.split("=", 1)
+        searched_msg: discord.Message = await search(entry_word, dictionary_channel)
+        if searched_msg is None:
+            await messages.entry_not_found(dictionary_channel, history_channel, msg, entry_word)
+            return
+
+        if option_and_update[0].strip() == "def":
+            new_def = f"{searched_msg.content}```{option_and_update[1].strip()}```"
+            await messages.edited_entry_msg(
+                msg, searched_msg, new_def, history_channel, edited_field="ENTRY-WORD EDITED"
+            )
+            await searched_msg.edit(content=new_def)
+
     else:
         await error.def_chan_cmd_error(msg, error_channel)
         return
@@ -139,7 +157,8 @@ async def check_alpha_commands(msg: discord.Message):
 
 
 async def reformat_dictionary_input(msg: discord.Message):
-    if re.search(os.environ["ENTRY_FORMAT"], msg.content):
+    if re.search(f"[a-zA-zぁ-ゔァ-ヴー々〆〤ヶ{os.environ['KANJI']} ]+[:][\n]*"
+                 f"([ 1-9]+[.][\n]*[a-zA-zぁ-ゔァ-ヴー々〆〤ヶ,{os.environ['KANJI']} ]+)+[\n]*", msg.content):
         msgArray = msg.content.split(":")
         term = msgArray[0]
         definitions = msgArray[1]
@@ -274,7 +293,7 @@ async def is_in_channel(msg: discord.Message, channel: discord.TextChannel):
 
 async def alphabetize_dictionary():
     messages_list = [message.content async for message in dictionary_channel.history()]
-    num_of_msgs = messages_list.__len__()
+    num_of_msgs = [message.content async for message in alpha_dict_channel.history()].__len__()
     await alpha_dict_channel.purge(limit=num_of_msgs)
     messages_list.sort(key=sort_by_word)
     for message in messages_list:
@@ -296,6 +315,7 @@ set_history_channel = "/setHist"
 set_alpha_dict_channel = "/setAZDict"
 alphabetize_command = "/alpha"
 dict_edit = "/edit"
+dict_add = "/add"
 
 all_channels_iterator = None
 

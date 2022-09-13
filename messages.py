@@ -8,8 +8,8 @@ async def edited_entry_msg(command_msg: discord.Message, original_msg: discord.M
         f"{edited_field} on: ``{datetime.datetime.now().strftime('%m-%d-%Y %H:%M:%S')}``\n"
         f"Link to edited entry: {original_msg.jump_url}\n"
         f"author: {command_msg.author.name}: {command_msg.author.discriminator}\n"
-        f"Original Content:\n``{original_msg.content}``\n"
-        f"New Content:\n``{new_msg}````` ```"
+        f"Original Content:\n{original_msg.content}\n"
+        f"New Content:\n{new_msg}``` ```"
     )
 
 
