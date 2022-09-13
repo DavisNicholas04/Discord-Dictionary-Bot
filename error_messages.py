@@ -1,6 +1,7 @@
 import discord
 import datetime
 
+
 async def invalid_command(msg: discord.Message):
     await msg.channel.send(f"```{msg.content}``` is not a valid command")
 
@@ -39,3 +40,23 @@ async def non_writing_channel(msg: discord.Message, channel: discord.TextChannel
 
     await warning.delete(delay=21600)
     await notification.delete(delay=21600)
+
+
+async def edit_def_error(msg: discord.Message, error_channel: discord.TextChannel, field1, field2, instead_of=""):
+    await error_channel.send(
+        f"**EDIT DEFINITION ERROR**:\n"
+        f"The command you typed is not a part of my functionality.\n"
+        f"Did you mean to type \"{field1}\" or \"{field2}\"{instead_of}?\n"
+        f"author: {msg.author.name}: {msg.author.discriminator}\n"
+        f"Original Content:\n{msg.content}\n``` ```"
+    )
+
+
+async def def_chan_cmd_error(msg: discord.Message, error_channel: discord.TextChannel):
+    await error_channel.send(
+        f"**DEFINITION CHANNEL COMMAND ERROR**:\n"
+        f"The command you typed is not a part of my functionality.\n"
+        f"did you mean \"/edit\" instead of {msg.content.strip().split(' ', 1)[0]}"
+        f"author: {msg.author.name}: {msg.author.discriminator}\n"
+        f"Original Content:\n{msg.content}\n``` ```"
+    )

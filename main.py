@@ -1,4 +1,3 @@
-import datetime
 import re
 import os
 import discord
@@ -9,9 +8,8 @@ from dotenv import load_dotenv
 
 
 class myClient(discord.Client):
-
     async def on_ready(self):
-        print(f"Logged in as {client.user}".format(client))
+        print("Logged in as {{client.user}}".format(client))
         global all_channels_iterator
         all_channels_iterator = client.get_all_channels()
         global bot_channel_name
@@ -57,25 +55,14 @@ async def check_dict_commands(msg: discord.Message):
         option_and_update = entry_word_removed_entry.split("=", 1)
         searched_msg: discord.Message = await search(entry_word, dictionary_channel)
         if searched_msg is None:
-            cant_find_msg = await dictionary_channel.send(
-                f"Could not find {entry_word} in the dictionary. "
-                f"make sure it was typed correctly. this message will expire in 30 sec"
-            )
-            await cant_find_msg.delete(delay=30)
-            await history_channel.send(
-                f"SEARCH FAILED:\nChannel:{dictionary_channel}\n"
-                f"author: {msg.author.name}: {msg.author.discriminator}\n"
-                f"Original Content:\n{msg.content}\n``` ```"
-            )
+            await messages.entry_not_found(dictionary_channel, history_channel, msg, entry_word)
             return
 
         if option_and_update[0].strip() == "name":
             desired_name = f"__{option_and_update[1].strip()}__: {searched_msg.content.split(':', 1)[1].strip()}"
-            await history_channel.send(
-                f"MESSAGE EDITED on: ``{datetime.datetime.now().strftime('%m-%d-%Y %H:%M:%S')}``\n"
-                f"Link to edited entry: {searched_msg.jump_url}"
-                f"author: {msg.author.name}: {msg.author.discriminator}\n"
-                f"Original Content:\n``{searched_msg.content}``\n``` ```")
+            await messages.edited_entry_msg(
+                msg, searched_msg, desired_name, history_channel, edited_field="ENTRY-WORD EDITED"
+            )
             await searched_msg.edit(content=desired_name)
 
         elif option_and_update[0].strip() == "num":
@@ -106,50 +93,30 @@ async def check_dict_commands(msg: discord.Message):
                 desired_definition_pt1 = split_def[0]
                 desired_definition_pt2 = split_def[1].split("```", 1)[1].strip()
                 desired_entry_state = f"{desired_definition_pt1}```{num}. {edited_def}```{desired_definition_pt2}"
-                await history_channel.send(
-                    f"MESSAGE EDITED on: ``{datetime.datetime.now().strftime('%m-%d-%Y %H:%M:%S')}``\n"
-                    f"Link to edited entry: {searched_msg.jump_url}"
-                    f"author: {msg.author.name}: {msg.author.discriminator}\n"
-                    f"Original Content:\n{searched_msg.content}\n``` ```")
+                await messages.edited_entry_msg(
+                    msg, searched_msg, desired_entry_state, history_channel, edited_field=f"DEFINITION {num} EDITED"
+                )
                 await searched_msg.edit(content=desired_entry_state)
+
             elif option_and_update[1].strip().endswith("remove"):
                 num = option_and_update[1].strip().removesuffix("remove").strip()
                 split_def = searched_msg.content.split("```" + num + ".", 1)
                 desired_definition_pt1 = split_def[0]
                 desired_definition_pt2 = split_def[1].split("```", 1)[1].strip()
                 desired_entry_state = f"{desired_definition_pt1}{desired_definition_pt2}"
-                await history_channel.send(
-                    f"MESSAGE EDITED on: ``{datetime.datetime.now().strftime('%m-%d-%Y %H:%M:%S')}``\n"
-                    f"Link to edited entry: {searched_msg.jump_url}"
-                    f"author: {msg.author.name}: {msg.author.discriminator}\n"
-                    f"Original Content:\n{searched_msg.content}\n``` ```")
+                await messages.edited_entry_msg(
+                    msg, searched_msg, desired_entry_state, history_channel, edited_field=f"DEFINITION {num} REMOVED"
+                )
                 await searched_msg.edit(content=desired_entry_state)
             else:
-                await error_channel.send(
-                    f"**EDIT DEFINITION ERROR**:\n"
-                    f"The command you typed is not a part of my functionality.\n"
-                    f"Did you mean to type \"def=\" or \"remove\"?\n"
-                    f"author: {msg.author.name}: {msg.author.discriminator}\n"
-                    f"Original Content:\n{msg.content}\n``` ```"
-                )
+                await error.edit_def_error(msg, error_channel, "def=", "remove")
                 return
         else:
-            await error_channel.send(
-                f"**EDIT DEFINITION ERROR**:\n"
-                f"The command you typed is not a part of my functionality.\n"
-                f"Did you mean to type\"name=\" or \"num=\" instead of \"{option_and_update[0].strip()}\"?\n"
-                f"author: {msg.author.name}: {msg.author.discriminator}\n"
-                f"Original Content:\n{msg.content}\n``` ```"
-            )
+            await error.edit_def_error(msg, error_channel, "name=", "num=",
+                                       instead_of=f" \"{option_and_update[0].strip()}\"")
             return
     else:
-        await error_channel.send(
-            f"**DEFINITION CHANNEL COMMAND ERROR**:\n"
-            f"The command you typed is not a part of my functionality.\n"
-            f"did you mean \"/edit\" instead of {msg.content.strip().split(' ', 1)[0]}"
-            f"author: {msg.author.name}: {msg.author.discriminator}\n"
-            f"Original Content:\n{msg.content}\n``` ```"
-        )
+        await error.def_chan_cmd_error(msg, error_channel)
         return
 
 
@@ -166,10 +133,7 @@ async def check_alpha_commands(msg: discord.Message):
 
 
 async def reformat_dictionary_input(msg: discord.Message):
-    if re.search(
-            f"[a-zA-zぁ-ゔァ-ヴー々〆〤ヶ{os.environ['KANJI']} ]+[:][\n]*"
-            f"([ 1-9]+[.][\n]*[a-zA-zぁ-ゔァ-ヴー々〆〤ヶ,{os.environ['KANJI']} ]+)+[\n]*",
-            msg.content):
+    if re.search(os.environ["ENTRY_FORMAT"], msg.content):
         msgArray = msg.content.split(":")
         term = msgArray[0]
         definitions = msgArray[1]
@@ -181,11 +145,7 @@ async def reformat_dictionary_input(msg: discord.Message):
         for i, defs in zip(range(num_of_definitions), split_definitions):
             reformatted_msg = f"{reformatted_msg}```{i + 1}.{defs.strip()}```"
         sent_message = await msg.channel.send(reformatted_msg)
-        await history_channel.send(f"Formatted on: ``{datetime.datetime.now().strftime('%m-%d-%Y %H:%M:%S')}``\n"
-                                   f"New Message Link: {sent_message.jump_url}\n"
-                                   # f"index: {index}\n"
-                                   f"author: {msg.author.name}: {msg.author.discriminator}\n"
-                                   f"Original Content:\n{msg.content}\n``` ```")
+        await messages.formatting_complete_msg(history_channel, msg, sent_message)
         await msg.delete()
     else:
         await error.formatting_error(msg, error_channel)
@@ -313,9 +273,7 @@ async def alphabetize_dictionary():
     messages_list.sort(key=sort_by_word)
     for message in messages_list:
         await alpha_dict_channel.send(message)
-    await history_channel.send(
-        f"{alpha_dict_name} was updated on {datetime.datetime.now().strftime('%m-%d-%Y %H:%M:%S')}"
-        f"\nThere are now {num_of_msgs} entries")
+    await messages.content_reload_msg(history_channel, alpha_dict_channel, num_of_msgs)
     sleep(.5)
 
 
