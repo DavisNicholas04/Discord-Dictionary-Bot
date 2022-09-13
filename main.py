@@ -4,6 +4,7 @@ import os
 import discord
 from time import sleep
 import error_messages as error
+import messages
 from dotenv import load_dotenv
 
 
@@ -74,13 +75,13 @@ async def check_dict_commands(msg: discord.Message):
                 f"MESSAGE EDITED on: ``{datetime.datetime.now().strftime('%m-%d-%Y %H:%M:%S')}``\n"
                 f"Link to edited entry: {searched_msg.jump_url}"
                 f"author: {msg.author.name}: {msg.author.discriminator}\n"
-                f"Original Content:\n{msg.content}\n``` ```")
+                f"Original Content:\n``{searched_msg.content}``\n``` ```")
             await searched_msg.edit(content=desired_name)
 
         elif option_and_update[0].strip() == "num":
             if option_and_update[1].__contains__("def="):
                 num_and_def = option_and_update[1].split("def=", 1)
-                num = num_and_def[0]
+                num = num_and_def[0].strip()
                 edited_def = num_and_def[1]
 
                 # Splits definition at number and ending tick marks that all definitions are formatted to have
@@ -109,10 +110,10 @@ async def check_dict_commands(msg: discord.Message):
                     f"MESSAGE EDITED on: ``{datetime.datetime.now().strftime('%m-%d-%Y %H:%M:%S')}``\n"
                     f"Link to edited entry: {searched_msg.jump_url}"
                     f"author: {msg.author.name}: {msg.author.discriminator}\n"
-                    f"Original Content:\n{msg.content}\n``` ```")
+                    f"Original Content:\n{searched_msg.content}\n``` ```")
                 await searched_msg.edit(content=desired_entry_state)
             elif option_and_update[1].strip().endswith("remove"):
-                num = option_and_update[1].strip().removesuffix("remove")
+                num = option_and_update[1].strip().removesuffix("remove").strip()
                 split_def = searched_msg.content.split("```" + num + ".", 1)
                 desired_definition_pt1 = split_def[0]
                 desired_definition_pt2 = split_def[1].split("```", 1)[1].strip()
@@ -121,7 +122,7 @@ async def check_dict_commands(msg: discord.Message):
                     f"MESSAGE EDITED on: ``{datetime.datetime.now().strftime('%m-%d-%Y %H:%M:%S')}``\n"
                     f"Link to edited entry: {searched_msg.jump_url}"
                     f"author: {msg.author.name}: {msg.author.discriminator}\n"
-                    f"Original Content:\n{msg.content}\n``` ```")
+                    f"Original Content:\n{searched_msg.content}\n``` ```")
                 await searched_msg.edit(content=desired_entry_state)
             else:
                 await error_channel.send(
