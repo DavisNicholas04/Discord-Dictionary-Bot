@@ -28,7 +28,7 @@ class myClient(discord.Client):
             await set_channel(msg)
 
         elif await is_in_channel(msg, dictionary_channel):
-            await reformat_dictionary_input(msg)
+            await check_dict_commands(msg)
 
         elif await is_in_channel(msg, history_channel):
             await error.non_writing_channel(msg, history_channel)
@@ -45,12 +45,14 @@ async def check_dict_commands(msg: discord.Message):
         - edit-entry-definition: /edit <entry-word> num=<definition-number> def=<new-def>
         - remove-entry-definition: /edit <entry-word> num=<definition-number> remove
     """
-    if msg.content.startswith(dict_edit):
+    if not msg.content.startswith("/"):
+        await reformat_dictionary_input(msg)
+    elif msg.content.startswith(dict_edit):
         command_removed_entry = msg.content.removeprefix(dict_edit).strip()
         entry_word = command_removed_entry.split(" ", 1)[0].strip()
         entry_word_removed_entry = command_removed_entry.removeprefix(entry_word)
         option_and_update = entry_word_removed_entry.split("=")
-        searched_msg: discord.Message = search(entry_word, dictionary_channel)
+        searched_msg: discord.Message = await search(entry_word, dictionary_channel)
         if option_and_update[0].strip() == "name":
             desired_name = f"__{option_and_update[1]}__: {searched_msg.content.split(':', 1)[1]}"
             await searched_msg.edit(content=desired_name)
@@ -129,14 +131,14 @@ async def reformat_dictionary_input(msg: discord.Message):
         split_definitions = re.split('[1-9]+.', definitions)
         split_definitions.pop(0)
         num_of_definitions = len(split_definitions)
-        index = get_most_recent_msg_index(dictionary_channel)
-        reformatted_msg = f"{index}. __{term}__:"
+        # index = get_most_recent_msg_index(dictionary_channel)
+        reformatted_msg = f"__{term}__:"
         for i, defs in zip(range(num_of_definitions), split_definitions):
             reformatted_msg = f"{reformatted_msg}```{i + 1}.{defs.strip()}```"
         sent_message = await msg.channel.send(reformatted_msg)
         await history_channel.send(f"Formatted on: ``{datetime.datetime.now().strftime('%m-%d-%Y %H:%M:%S')}``\n"
                                    f"New Message Link: {sent_message.jump_url}\n"
-                                   f"index: {index}\n"
+                                   # f"index: {index}\n"
                                    f"author: {msg.author.name}: {msg.author.discriminator}\n"
                                    f"Original Content:\n{msg.content}\n``` ```")
         await msg.delete()
@@ -145,10 +147,10 @@ async def reformat_dictionary_input(msg: discord.Message):
         await msg.delete()
 
 
-async def get_most_recent_msg_index(channel: discord.TextChannel):
-    recent_msg: discord.Message = [msg async for msg in channel.history(limit=1)][0]
-    index = recent_msg.content.split(".", 1)[0]
-    return int(index) + 1
+# async def get_most_recent_msg_index(channel: discord.TextChannel):
+#     recent_msg: discord.Message = [msg async for msg in channel.history(limit=1)][0]
+#     index = recent_msg.content.split(".", 1)[0]
+#     return int(index) + 1
 
 
 async def set_channel(msg: discord.Message):
