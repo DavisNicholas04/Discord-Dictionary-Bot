@@ -7,34 +7,40 @@ import messages
 from dotenv import load_dotenv
 
 
-class myClient(discord.Client):
-    async def on_ready(self):
-        print("Logged in as {{client.user}}".format(client))
-        global all_channels_iterator
-        all_channels_iterator = client.get_all_channels()
-        global bot_channel_name
-        bot_channel_name = "bot-commands"
-        global bot_channel
-        bot_channel = discord.utils.get(all_channels_iterator, name=bot_channel_name)
-        global bot_channel_id
-        bot_channel_id = bot_channel.id
-        await set_channels_defaults()
+intents = discord.Intents.all()
+client = discord.Client(intents=intents)
 
-    async def on_message(self, msg: discord.Message):
-        if msg.author == client.user:
-            return
-        if await is_in_channel(msg, bot_channel):
-            await set_channel(msg)
 
-        elif await is_in_channel(msg, dictionary_channel):
-            await check_dict_commands(msg)
+@client.event
+async def on_ready():
+    print("Logged in as {{client.user}}".format(client))
+    global all_channels_iterator
+    all_channels_iterator = client.get_all_channels()
+    global bot_channel_name
+    bot_channel_name = "bot-commands"
+    global bot_channel
+    bot_channel = discord.utils.get(all_channels_iterator, name=bot_channel_name)
+    global bot_channel_id
+    bot_channel_id = bot_channel.id
+    await set_channels_defaults()
 
-        elif await is_in_channel(msg, history_channel):
-            await error.non_writing_channel(msg, history_channel)
 
-        elif await is_in_channel(msg, alpha_dict_channel):
-            await check_alpha_commands(msg)
+@client.event
+async def on_message(msg: discord.Message):
+    if msg.author == client.user:
         return
+    if await is_in_channel(msg, bot_channel):
+        await set_channel(msg)
+
+    elif await is_in_channel(msg, dictionary_channel):
+        await check_dict_commands(msg)
+
+    elif await is_in_channel(msg, history_channel):
+        await error.non_writing_channel(msg, history_channel)
+
+    elif await is_in_channel(msg, alpha_dict_channel):
+        await check_alpha_commands(msg)
+    return
 
 
 async def check_dict_commands(msg: discord.Message):
@@ -322,7 +328,5 @@ alpha_dict_channel: discord.TextChannel
 alpha_dict_channel_id = None
 
 # Vitals
-intents = discord.Intents.all()
-client = myClient(intents=intents)
 load_dotenv()
 client.run(os.environ['DISCORD_TOKEN'])
