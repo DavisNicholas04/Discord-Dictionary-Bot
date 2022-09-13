@@ -45,16 +45,31 @@ async def check_dict_commands(msg: discord.Message):
         - edit-entry-definition: /edit <entry-word> num=<definition-number> def=<new-def>
         - remove-entry-definition: /edit <entry-word> num=<definition-number> remove
     """
+    await msg.delete(delay=10)
     if not msg.content.startswith("/"):
         await reformat_dictionary_input(msg)
+
     elif msg.content.startswith(dict_edit):
         command_removed_entry = msg.content.removeprefix(dict_edit).strip()
         entry_word = command_removed_entry.split(" ", 1)[0].strip()
         entry_word_removed_entry = command_removed_entry.removeprefix(entry_word)
         option_and_update = entry_word_removed_entry.split("=")
         searched_msg: discord.Message = await search(entry_word, dictionary_channel)
+        if searched_msg is None:
+            cant_find_msg = await dictionary_channel.send(
+                f"Could not find {entry_word} in the dictionary. "
+                f"make sure it was typed correctly. this message will expire in 30 sec"
+            )
+            await cant_find_msg.delete(delay=30)
+            await history_channel.send(
+                f"SEARCH FAILED:\nChannel:{dictionary_channel}\n"
+                f"author: {msg.author.name}: {msg.author.discriminator}\n"
+                f"Original Content:\n{msg.content}\n``` ```"
+            )
+            return
+
         if option_and_update[0].strip() == "name":
-            desired_name = f"__{option_and_update[1]}__: {searched_msg.content.split(':', 1)[1]}"
+            desired_name = f"__{option_and_update[1].strip()}__: {searched_msg.content.split(':', 1)[1].strip()}"
             await searched_msg.edit(content=desired_name)
 
         elif option_and_update[0].strip() == "num":
@@ -68,6 +83,18 @@ async def check_dict_commands(msg: discord.Message):
                 # the case where we edit word x on the y+1 definition.
                 # <Word>: ...```<num+0>. <def>``` ```<num+1>.| <def>|```...
                 split_def = searched_msg.content.split("```" + num + ".", 1)
+                if split_def.__len__() == 1:
+                    def_num_not_found = await dictionary_channel.send(
+                        f"Could not find definition #{num} of {entry_word} in the dictionary. "
+                        f"make sure it was typed correctly. this message will expire in 30 sec"
+                    )
+                    await def_num_not_found.delete(delay=30)
+                    await history_channel.send(
+                        f"SEARCH FAILED:\nChannel:{dictionary_channel}\n"
+                        f"author: {msg.author.name}: {msg.author.discriminator}\n"
+                        f"Original Content:\n{msg.content}\n``` ```"
+                    )
+                    return
                 desired_definition_pt1 = split_def[0]
                 desired_definition_pt2 = split_def[1].split("```", 1)[1].strip()
                 desired_entry_state = f"{desired_definition_pt1}```{num}. {edited_def}```{desired_definition_pt2}"
