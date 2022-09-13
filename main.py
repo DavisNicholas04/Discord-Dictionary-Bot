@@ -2,6 +2,7 @@ import datetime
 import re
 import os
 import discord
+from time import sleep
 import error_messages as error
 from dotenv import load_dotenv
 
@@ -33,18 +34,94 @@ class myClient(discord.Client):
             await error.non_writing_channel(msg, history_channel)
 
         elif await is_in_channel(msg, alpha_dict_channel):
-            await check_commands(msg)
+            await check_alpha_commands(msg)
         return
 
 
-async def check_commands(msg: discord.Message):
+async def check_dict_commands(msg: discord.Message):
+    """
+     format
+        - edit-entry-name: /edit <entry-word> name=<new-name>
+        - edit-entry-definition: /edit <entry-word> num=<definition-number> def=<new-def>
+        - remove-entry-definition: /edit <entry-word> num=<definition-number> remove
+    """
+    if msg.content.startswith(dict_edit):
+        command_removed_entry = msg.content.removeprefix(dict_edit).strip()
+        entry_word = command_removed_entry.split(" ", 1)[0].strip()
+        entry_word_removed_entry = command_removed_entry.removeprefix(entry_word)
+        option_and_update = entry_word_removed_entry.split("=")
+        searched_msg: discord.Message = search(entry_word, dictionary_channel)
+        if option_and_update[0].strip() == "name":
+            desired_name = f"__{option_and_update[1]}__: {searched_msg.content.split(':', 1)[1]}"
+            await searched_msg.edit(content=desired_name)
+
+        elif option_and_update[0].strip() == "num":
+            if option_and_update[1].__contains__("def="):
+                num_and_def = option_and_update[1].split("def=", 1)
+                num = num_and_def[0]
+                edited_def = num_and_def[1]
+
+                # Splits definition at number and ending tick marks that all definitions are formatted to have
+                # and gets rid of white space. vertical lines (|) will signify the split location of the message
+                # the case where we edit word x on the y+1 definition.
+                # <Word>: ...```<num+0>. <def>``` ```<num+1>.| <def>|```...
+                split_def = searched_msg.content.split("```" + num + ".", 1)
+                desired_definition_pt1 = split_def[0]
+                desired_definition_pt2 = split_def[1].split("```", 1)[1].strip()
+                desired_entry_state = f"{desired_definition_pt1}```{num}. {edited_def}```{desired_definition_pt2}"
+                await searched_msg.edit(content=desired_entry_state)
+            elif option_and_update[1].strip().endswith("remove"):
+                num = option_and_update[1].strip().removesuffix("remove")
+                split_def = searched_msg.content.split("```" + num + ".", 1)
+                desired_definition_pt1 = split_def[0]
+                desired_definition_pt2 = split_def[1].split("```", 1)[1].strip()
+                desired_entry_state = f"{desired_definition_pt1}{desired_definition_pt2}"
+                await searched_msg.edit(content=desired_entry_state)
+            else:
+                await error_channel.send(
+                    f"**EDIT DEFINITION ERROR**:\n"
+                    f"The command you typed is not a part of my functionality.\n"
+                    f"Did you mean to type \"def=\" or \"remove\"?\n"
+                    f"author: {msg.author.name}: {msg.author.discriminator}\n"
+                    f"Original Content:\n{msg.content}\n``` ```"
+                )
+                return
+        else:
+            await error_channel.send(
+                f"**EDIT DEFINITION ERROR**:\n"
+                f"The command you typed is not a part of my functionality.\n"
+                f"Did you mean to type\"name=\" or \"num=\" instead of \"{option_and_update[0].strip()}\"?\n"
+                f"author: {msg.author.name}: {msg.author.discriminator}\n"
+                f"Original Content:\n{msg.content}\n``` ```"
+            )
+            return
+    else:
+        await error_channel.send(
+            f"**DEFINITION CHANNEL COMMAND ERROR**:\n"
+            f"The command you typed is not a part of my functionality.\n"
+            f"did you mean \"/edit\" instead of {msg.content.strip().split(' ', 1)[0]}"
+            f"author: {msg.author.name}: {msg.author.discriminator}\n"
+            f"Original Content:\n{msg.content}\n``` ```"
+        )
+        return
+
+
+async def search(word, channel: discord.TextChannel):
+    message_history = [msg async for msg in channel.history()]
+    for msg in message_history:
+        if msg.content.replace("_", "").startswith(word):
+            return msg
+
+
+async def check_alpha_commands(msg: discord.Message):
     if msg.content == alphabetize_command:
         await alphabetize_dictionary()
 
 
 async def reformat_dictionary_input(msg: discord.Message):
     if re.search(
-            f"[a-zA-zぁ-ゔァ-ヴー々〆〤ヶ{os.environ['KANJI']} ]+[:][\n]*([ 1-9]+[.][\n]*[a-zA-zぁ-ゔァ-ヴー々〆〤ヶ,{os.environ['KANJI']} ]+)+[\n]*",
+            f"[a-zA-zぁ-ゔァ-ヴー々〆〤ヶ{os.environ['KANJI']} ]+[:][\n]*"
+            f"([ 1-9]+[.][\n]*[a-zA-zぁ-ゔァ-ヴー々〆〤ヶ,{os.environ['KANJI']} ]+)+[\n]*",
             msg.content):
         msgArray = msg.content.split(":")
         term = msgArray[0]
@@ -72,6 +149,7 @@ async def get_most_recent_msg_index(channel: discord.TextChannel):
     recent_msg: discord.Message = [msg async for msg in channel.history(limit=1)][0]
     index = recent_msg.content.split(".", 1)[0]
     return int(index) + 1
+
 
 async def set_channel(msg: discord.Message):
     valid_command = \
@@ -181,9 +259,6 @@ async def is_in_channel(msg: discord.Message, channel: discord.TextChannel):
         return False
 
 
-
-
-
 async def alphabetize_dictionary():
     messages_list = [message.content async for message in dictionary_channel.history()]
     num_of_msgs = messages_list.__len__()
@@ -194,12 +269,12 @@ async def alphabetize_dictionary():
     await history_channel.send(
         f"{alpha_dict_name} was updated on {datetime.datetime.now().strftime('%m-%d-%Y %H:%M:%S')}"
         f"\nThere are now {num_of_msgs} entries")
+    sleep(.5)
 
 
 def sort_by_word(content):
     word = content.split(":", 1)[0]
     return word
-
 
 
 # Bot channel commands and variables
@@ -208,7 +283,8 @@ set_phrase_channel = "/setPhrase"
 set_undefined_words_channel = "/setUWords"
 set_history_channel = "/setHist"
 set_alpha_dict_channel = "/setAZDict"
-alphabetize_command = "/alphabetize"
+alphabetize_command = "/alpha"
+dict_edit = "/edit"
 
 all_channels_iterator = None
 
