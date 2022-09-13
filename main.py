@@ -70,6 +70,7 @@ async def check_dict_commands(msg: discord.Message):
 
         if option_and_update[0].strip() == "name":
             desired_name = f"__{option_and_update[1].strip()}__: {searched_msg.content.split(':', 1)[1].strip()}"
+            history_channel.send(MESSAGE EDITED:)
             await searched_msg.edit(content=desired_name)
 
         elif option_and_update[0].strip() == "num":
@@ -95,9 +96,11 @@ async def check_dict_commands(msg: discord.Message):
                         f"Original Content:\n{msg.content}\n``` ```"
                     )
                     return
+
                 desired_definition_pt1 = split_def[0]
                 desired_definition_pt2 = split_def[1].split("```", 1)[1].strip()
                 desired_entry_state = f"{desired_definition_pt1}```{num}. {edited_def}```{desired_definition_pt2}"
+                history_channel.send(MESSAGE EDITED:)
                 await searched_msg.edit(content=desired_entry_state)
             elif option_and_update[1].strip().endswith("remove"):
                 num = option_and_update[1].strip().removesuffix("remove")
@@ -105,6 +108,7 @@ async def check_dict_commands(msg: discord.Message):
                 desired_definition_pt1 = split_def[0]
                 desired_definition_pt2 = split_def[1].split("```", 1)[1].strip()
                 desired_entry_state = f"{desired_definition_pt1}{desired_definition_pt2}"
+                history_channel.send(MESSAGE EDITED:)
                 await searched_msg.edit(content=desired_entry_state)
             else:
                 await error_channel.send(
