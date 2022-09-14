@@ -1,4 +1,4 @@
-# Discord-Dictionary-Bot (MVP)
+# Discord-Dictionary-Bot (MVP) <sub><sub><sup>This is a personal project. Documentation may be slow</sub></sub></sup>
 
 This bot is for formatting dictionary entries in discord.
 
@@ -38,3 +38,21 @@ Changing which channels are associated with the dictionary, phrases, undefined w
     
   ```/setPhrase <channelName>```
       By default the bot will set this channel to a channel named **文と句**. This command sets the channel that will hold phrases. The intended use of this channel is to see the defined or undefined words used in context. No formatting is currently enforced and the bot will not interact with this channel. 
+
+**Dictionary channel commands**
+
+```/edit <entry-word> name=<new entry-word name>```
+
+```/edit <entry-word> num=<definition number> def=<replacement definition entry>```
+
+```/edit <entry-word> num=<definition-number> remove```
+
+```/add <entry-word> def=<new definition>```
+
+```DEFINITION-SAFE-DELETE (comming soon)```
+
+**alphabetical order dictionary channel commands**
+
+```/alpha```
+
+
