@@ -54,6 +54,7 @@ async def check_dict_commands(msg: discord.Message):
     if not msg.content.startswith("/"):
         await reformat_dictionary_input(msg)
 
+        # For the /edit command in the dictionary channel
     elif msg.content.startswith(dict_edit):
         command_removed_entry = msg.content.removeprefix(dict_edit).strip()
         entry_word = command_removed_entry.split(" ", 1)[0].strip()
@@ -64,6 +65,7 @@ async def check_dict_commands(msg: discord.Message):
             await messages.entry_not_found(dictionary_channel, history_channel, msg, entry_word)
             return
 
+        # For changing the Entry-Word for a given entry
         if option_and_update[0].strip() == "name":
             desired_name = f"__{option_and_update[1].strip()}__: {searched_msg.content.split(':', 1)[1].strip()}"
             await messages.edited_entry_msg(
@@ -71,6 +73,7 @@ async def check_dict_commands(msg: discord.Message):
             )
             await searched_msg.edit(content=desired_name)
 
+        # For editing the definition of a dictionary entry
         elif option_and_update[0].strip() == "num":
             if option_and_update[1].__contains__("def="):
                 num_and_def = option_and_update[1].split("def=", 1)
@@ -104,16 +107,25 @@ async def check_dict_commands(msg: discord.Message):
                 )
                 await searched_msg.edit(content=desired_entry_state)
 
+            # For when you want to delete a definition from a given entry
             elif option_and_update[1].strip().endswith("remove"):
-                num = option_and_update[1].strip().removesuffix("remove").strip()
-                split_def = searched_msg.content.split("```" + num + ".", 1)
+                num = int(option_and_update[1].strip().removesuffix("remove").strip())
+                split_def = searched_msg.content.split(f"```{num}.", 1)
                 desired_definition_pt1 = split_def[0]
                 desired_definition_pt2 = split_def[1].split("```", 1)[1].strip()
                 desired_entry_state = f"{desired_definition_pt1}{desired_definition_pt2}"
+
+                indexes = re.findall("[1-9][0-9]*", desired_entry_state)
+
+                for i in range(num + 1, indexes.__len__() + 2):
+                    desired_entry_state = desired_entry_state.replace(f"{i}.", f"{i-1}.")
+
                 await messages.edited_entry_msg(
                     msg, searched_msg, desired_entry_state, history_channel, edited_field=f"DEFINITION {num} REMOVED"
                 )
                 await searched_msg.edit(content=desired_entry_state)
+
+
             else:
                 await error.edit_def_error(msg, error_channel, "def=", "remove")
                 return
@@ -131,9 +143,9 @@ async def check_dict_commands(msg: discord.Message):
         if searched_msg is None:
             await messages.entry_not_found(dictionary_channel, history_channel, msg, entry_word)
             return
-
+        num = re.split("[1-9]+.", searched_msg.content).__len__()
         if option_and_update[0].strip() == "def":
-            new_def = f"{searched_msg.content}```{option_and_update[1].strip()}```"
+            new_def = f"{searched_msg.content}```{num}.{option_and_update[1].strip()}```"
             await messages.edited_entry_msg(
                 msg, searched_msg, new_def, history_channel, edited_field="ENTRY-WORD EDITED"
             )
@@ -159,6 +171,20 @@ async def check_alpha_commands(msg: discord.Message):
 async def reformat_dictionary_input(msg: discord.Message):
     if re.search(f"[a-zA-zぁ-ゔァ-ヴー々〆〤ヶ{os.environ['KANJI']} ]+[:][\n]*"
                  f"([ 1-9]+[.][\n]*[a-zA-zぁ-ゔァ-ヴー々〆〤ヶ,{os.environ['KANJI']} ]+)+[\n]*", msg.content):
+        await msg.delete()
+        searched_entry: discord.Message = await search(msg.content.split(":", 1)[0], dictionary_channel)
+        if searched_entry is not None:
+            entry_word = searched_entry.content.split(":", 1)[0].strip()
+            sent = await dictionary_channel.send(
+                f"{entry_word} is already a dictionary entry.\n"
+                f"link: {searched_entry.jump_url}\n"
+                f"if you would like to add a definition to this entry, use this as a template:"
+            )
+            sent2 = await dictionary_channel.send(f"/add {entry_word} def=")
+            await sent.delete(delay=30)
+            await sent2.delete(delay=30)
+            await error.repeat_entry(msg, error_channel)
+            return
         msgArray = msg.content.split(":")
         term = msgArray[0]
         definitions = msgArray[1]
@@ -171,11 +197,8 @@ async def reformat_dictionary_input(msg: discord.Message):
             reformatted_msg = f"{reformatted_msg}```{i + 1}.{defs.strip()}```"
         sent_message = await msg.channel.send(reformatted_msg)
         await messages.formatting_complete_msg(history_channel, msg, sent_message)
-        await msg.delete()
     else:
         await error.formatting_error(msg, error_channel)
-        await msg.delete()
-
 
 # async def get_most_recent_msg_index(channel: discord.TextChannel):
 #     recent_msg: discord.Message = [msg async for msg in channel.history(limit=1)][0]

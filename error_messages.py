@@ -60,3 +60,12 @@ async def def_chan_cmd_error(msg: discord.Message, error_channel: discord.TextCh
         f"author: {msg.author.name}: {msg.author.discriminator}\n"
         f"Original Content:\n{msg.content}\n``` ```"
     )
+
+async def repeat_entry(msg: discord.Message, error_channel: discord.TextChannel):
+    await error_channel.send(
+        f"**REPEAT DICTIONARY ENTRY ATTEMPT**:\n"
+        f"The entry you tried to make appears to already be in the dictionary.\n"
+        f"if you meant to add a definition to the entry please use the /add command"
+        f"author: {msg.author.name}: {msg.author.discriminator}\n"
+        f"Original Content:\n{msg.content}\n``` ```"
+    )

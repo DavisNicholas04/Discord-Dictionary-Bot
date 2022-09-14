@@ -33,7 +33,8 @@ async def entry_not_found(dictionary_channel: discord.TextChannel, history_chann
                           original_msg: discord.Message, entry_word):
     cant_find_msg = await dictionary_channel.send(
         f"Could not find {entry_word} in the dictionary. "
-        f"make sure it was typed correctly. this message will expire in 30 sec"
+        f"make sure it was typed correctly. this message will expire in 30 sec\n"
+        f"command typed: {original_msg}"
     )
     await cant_find_msg.delete(delay=30)
     await history_channel.send(
