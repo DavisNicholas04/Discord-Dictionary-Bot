@@ -188,13 +188,17 @@ async def reformat_dictionary_input(msg: discord.Message):
         msgArray = msg.content.split(":")
         term = msgArray[0]
         definitions = msgArray[1]
+        print(f"{term}\n\n\n{definitions}")
         split_definitions = re.split('[1-9]+.', definitions)
+        # pop(0) to get rid of empty index
+        backslash = "\\n"
         split_definitions.pop(0)
         num_of_definitions = len(split_definitions)
         # index = get_most_recent_msg_index(dictionary_channel)
         reformatted_msg = f"__{term}__:"
         for i, defs in zip(range(num_of_definitions), split_definitions):
-            reformatted_msg = f"{reformatted_msg}```{i + 1}.{defs.strip()}```"
+            final_def = defs.strip().replace("\n", " ")
+            reformatted_msg = f"{reformatted_msg}```{i + 1}.{final_def}```"
         sent_message = await msg.channel.send(reformatted_msg)
         await messages.formatting_complete_msg(history_channel, msg, sent_message)
     else:
