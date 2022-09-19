@@ -1,6 +1,7 @@
 # Discord-Dictionary-Bot (MVP) <sub><sub><sup>This is a personal project. Documentation may be slow</sub></sub></sup>
 
 Purpose:
+
 I started this project so my girlfriend and I could make note of and store the now endangered okinawan language. Starting with vocabulary this bot will expand to be able to make it easy to make note of, edit, search for, and learn sentence structures, conjucations, nuances and more.
 
 ### Formatting
